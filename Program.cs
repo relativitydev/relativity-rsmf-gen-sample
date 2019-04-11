@@ -31,7 +31,7 @@ namespace RSMFGen
              * Validation of the input directory is done by the class, but output location still
              * needs validation.
              */
-            if(Directory.Exists(Path.GetDirectoryName(args[1])) == false)
+            if(Path.GetDirectoryName(args[1]) != string.Empty && Directory.Exists(Path.GetDirectoryName(args[1])) == false)
             {
                 Console.WriteLine($"Output directory {args[1]} doesn't exist.");
                 return;

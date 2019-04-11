@@ -123,7 +123,7 @@ namespace RSMFGenLib
 
         /* 
          * Creating the EML layer of an RSMF file can be a little tricky, but MimeKit alleviates a lot of the issues.  This method
-         * returns a MimeMessage object that contains required and option headers for the RSMF EML layer.  It also constructs
+         * returns a MimeMessage object that contains required and optional headers for the RSMF EML layer.  It also constructs
          * a body for the RSMF that contains data pulled from the rsmf_manifest.json file.
          */ 
         private MimeMessage CreateRSMF(FileInfo manifest)
@@ -188,36 +188,45 @@ namespace RSMFGenLib
                     }
                     rsmf.To.AddRange(to);
                 }
-                /* To sort the events they need to be in a List.*/
-                List<JToken> events = json["events"].ToList();                
 
-                /* The list of events gets sorted by their timestamp so that older event data is put into the body text first.*/
-                events.Sort((first, second) =>
+                TextPart textPart = new TextPart(TextFormat.Plain);
+                if (json["events"] != null)
                 {
-                    string firstTimestamp = first["timestamp"]?.ToString() ?? "";
-                    string secondTimestamp = second["timestamp"]?.ToString() ?? "";
-                    return string.Compare(firstTimestamp, secondTimestamp);
-                });
+                    /* To sort the events they need to be in a List.*/
+                    List<JToken> events = json["events"].ToList();
 
-                /*These are optional headers, but adding them populates the relevant fields in Relativity.*/
-                rsmf.Headers.Add("X-RSMF-EventCount", events.Count.ToString());
-                if (events.Count > 1)
+                    /* The list of events gets sorted by their timestamp so that older event data is put into the body text first.*/
+                    events.Sort((first, second) =>
+                    {
+                        string firstTimestamp = first["timestamp"]?.ToString() ?? "";
+                        string secondTimestamp = second["timestamp"]?.ToString() ?? "";
+                        return string.Compare(firstTimestamp, secondTimestamp);
+                    });
+
+                    /*These are optional headers, but adding them populates the relevant fields in Relativity.*/
+                    rsmf.Headers.Add("X-RSMF-EventCount", events.Count.ToString());
+                    if (events.Count > 1)
+                    {
+                        if (events[0]["timestamp"] != null)
+                        {
+                            rsmf.Headers.Add("X-RSMF-BeginDate", events[0]["timestamp"].ToString());
+                        }
+                        if (events.Last()["timestamp"] != null)
+                        {
+                            rsmf.Headers.Add("X-RSMF-EndDate", events.Last()["timestamp"].ToString());
+                        }
+
+                    }
+                    textPart.Text = BuildBody(json, events);
+                }
+                else
                 {
-                    if (events[0]["timestamp"] != null)
-                    {
-                        rsmf.Headers.Add("X-RSMF-BeginDate", events[0]["timestamp"].ToString());
-                    }
-                    if (events.Last()["timestamp"] != null)
-                    {
-                        rsmf.Headers.Add("X-RSMF-EndDate", events.Last()["timestamp"].ToString());
-                    }
-
+                    /*Create an empty body.*/
+                    textPart.Text = "";
                 }
                 /*
                  * In MimeKit, the Body property is the body of the whole EML.  Since the RSMF requires rsmf.zip as an attachment, the body needs to be multipart/mixed.
-                 */                
-                TextPart textPart = new TextPart(TextFormat.Plain);
-                textPart.Text = BuildBody(json, events);
+                 */
                 Multipart multipart = new Multipart("mixed");
                 multipart.Add(textPart);
                 rsmf.Body = multipart;
