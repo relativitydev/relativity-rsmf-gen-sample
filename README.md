@@ -11,3 +11,6 @@ RSMFGen.exe is already built and can be run from the bin\Release directory.  It 
 
 ## RSMFGenLib.dll
 This library contains all of the code that is used to generate an RSMF file.  It can be referenced in other applications.  It requires NewtonSoft.Json.dll, NJsonSchema.dll, Relativity.RSMFU.Validator.dll and MimeKitLite.dll to run, so references to those libraries are also requried.
+
+## RSMF Specification
+The RSMF specification can be found on Relativity's documentation site at https://help.relativity.com/ under RelativityOne.
